@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060A0F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Не усни</title>
+<style>
+:root{
+  --bg:#060A0F;
+  --surface:#101820;
+  --line:#26333F;
+  --ink:#F2F7FB;
+  --ink-dim:#9DB0BF;
+  --go:#37E08D;
+  --go-ink:#04150C;
+  --warn:#FFB020;
+  --warn-ink:#1A1205;
+  --danger:#E5484D;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:16px/1.45 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+body.lit{--bg:#F7FAFC;--surface:#FFFFFF;--line:#C6D2DC;--ink:#0B141D;--ink-dim:#44586A}
+.screen{
+  display:flex;flex-direction:column;gap:20px;
+  min-height:100dvh;
+  padding:calc(20px + env(safe-area-inset-top,0px)) 20px 0;
+  max-width:560px;margin:0 auto;
+}
+h1{font-size:34px;line-height:1.1;margin:8px 0 0;letter-spacing:-.02em;text-wrap:balance}
+.lead{font-size:18px;color:var(--ink);margin:0;max-width:32ch}
+.steps{margin:0;padding:0 0 0 22px;display:grid;gap:10px;font-size:17px}
+.steps li::marker{color:var(--go);font-weight:700}
+.note{color:var(--ink-dim);font-size:14px;margin:0}
+.bar{
+  position:sticky;bottom:0;margin-top:auto;
+  padding:14px 0 calc(16px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(to bottom, transparent, var(--bg) 35%);
+}
+button{
+  font:inherit;color:var(--ink);
+  border:2px solid var(--line);border-radius:14px;
+  background:var(--surface);
+  min-height:44px;padding:10px 16px;
+  cursor:pointer;touch-action:manipulation;
+}
+button:focus-visible{outline:3px solid var(--go);outline-offset:2px}
+.primary{
+  width:100%;min-height:60px;
+  background:var(--go);border-color:var(--go);color:var(--go-ink);
+  font-size:20px;font-weight:800;border-radius:16px;
+}
+.primary:disabled{opacity:.45;cursor:default}
+.primary.confirm{background:var(--danger);border-color:var(--danger);color:#fff}
+.ghost{width:100%;min-height:52px;font-weight:600}
+.err{color:var(--danger);font-weight:600;margin:0}
+.cam-slot{position:relative;align-self:center}
+#cam{
+  width:min(46vw,210px);aspect-ratio:3/4;object-fit:cover;
+  transform:scaleX(-1);
+  border:2px solid var(--line);border-radius:14px;background:#000;display:block;
+}
+.chips{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
+.chip{
+  min-height:44px;display:inline-flex;align-items:center;gap:8px;
+  padding:8px 16px;border-radius:999px;
+  border:2px solid var(--line);background:var(--surface);
+  font-weight:700;font-size:15px;
+}
+.chip.ok{border-color:var(--go);color:var(--go)}
+.chip.warn{border-color:var(--warn);color:var(--warn)}
+.eye-wrap{display:grid;gap:6px;justify-items:center}
+.eye-track{width:min(60vw,260px);height:10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+#eyeFill{height:100%;width:0%;background:var(--go);border-radius:999px;transition:width .12s linear}
+#eyeFill.shut{background:var(--warn)}
+.field{display:grid;gap:10px}
+.field-name{font-weight:700;font-size:15px}
+.seg{display:flex;gap:10px}
+.seg button{flex:1;min-height:48px;font-weight:700;font-variant-numeric:tabular-nums}
+.seg button[aria-pressed="true"]{border-color:var(--go);color:var(--go)}
+.drive-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+#slotDrive #cam{width:min(30vw,140px)}
+.status{display:grid;justify-items:center;gap:6px;margin:auto 0}
+.ring{width:min(62vw,250px);height:auto;display:block}
+.ring .track{stroke:var(--surface)}
+.ring .arc{stroke:var(--warn);transition:stroke-dashoffset .1s linear}
+#stWord{font-size:clamp(28px,9vw,42px);font-weight:900;letter-spacing:.02em}
+#stWord.ok{color:var(--go)}
+#stWord.warn{color:var(--warn)}
+#stHint{color:var(--ink-dim);font-size:15px;min-height:1.4em;margin:0}
+.stats{display:flex;justify-content:center;gap:26px;font-variant-numeric:tabular-nums}
+.stat{display:grid;justify-items:center;gap:2px}
+.stat b{font-size:22px;font-weight:800}
+.stat span{font-size:13px;color:var(--ink-dim)}
+.overlay{
+  position:fixed;inset:0;z-index:50;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:#C40000;text-align:center;padding:24px;
+  animation:strobe .5s steps(1) infinite;
+}
+@keyframes strobe{0%{background:#D40000}50%{background:#6E0000}}
+@media (prefers-reduced-motion:reduce){.overlay{animation:none}}
+.overlay h2{font-size:clamp(52px,17vw,100px);font-weight:900;color:#fff;margin:0;letter-spacing:.01em}
+.overlay p{color:#FFD9D9;font-size:19px;font-weight:600;margin:0}
+.banner{
+  position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:40;
+  background:var(--warn);color:var(--warn-ink);
+  border-radius:14px;padding:16px 18px;
+  font-weight:800;font-size:17px;text-align:center;
+  border:2px solid var(--warn-ink);
+}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<section class="screen" id="scrStart">
+  <h1>Не усни</h1>
+  <p class="lead">Следит за твоими глазами через фронтальную камеру и включает сирену, если ты засыпаешь за рулём. Видео обрабатывается на телефоне и никуда не отправляется.</p>
+  <ol class="steps">
+    <li>Закрепи телефон в держателе — экраном и фронталкой к лицу.</li>
+    <li>Подключи зарядку: камера быстро ест батарею.</li>
+    <li>Держи страницу открытой всю поездку.</li>
+  </ol>
+  <p class="err" id="startErr" hidden></p>
+  <p class="note" id="iosNote" hidden>На iPhone выключи беззвучный режим, иначе сирену не будет слышно.</p>
+  <p class="note">Прототип-помощник, а не защита. Тянет в сон — остановись и поспи.</p>
+  <div class="bar"><button class="primary" id="btnStart">Включить камеру</button></div>
+</section>
+
+<section class="screen" id="scrSetup" hidden>
+  <div class="cam-slot" id="slotSetup"></div>
+  <div class="chips"><span class="chip warn" id="chipFace">Наведи камеру на лицо</span></div>
+  <div class="eye-wrap">
+    <div class="eye-track"><div id="eyeFill"></div></div>
+    <span class="note" id="eyeTxt">Глаза: —</span>
+  </div>
+  <div class="field">
+    <span class="field-name" id="segLabel">Сирена, если глаза закрыты дольше</span>
+    <div class="seg" role="radiogroup" aria-labelledby="segLabel">
+      <button data-delay="1000" aria-pressed="false">1 с</button>
+      <button data-delay="1500" aria-pressed="true">1,5 с</button>
+      <button data-delay="2000" aria-pressed="false">2 с</button>
+    </div>
+  </div>
+  <button class="ghost" id="btnSiren">Проверить сирену</button>
+  <p class="note">Закрой глаза на пару секунд — сирена сработает. Так проверишь и громкость, и камеру.</p>
+  <div class="bar"><button class="primary" id="btnGo" disabled>Поехали</button></div>
+</section>
+
+<section class="screen" id="scrDrive" hidden>
+  <div class="drive-top">
+    <div class="cam-slot" id="slotDrive"></div>
+    <button class="chip" id="btnLit" aria-pressed="false">Подсветка</button>
+  </div>
+  <div class="status">
+    <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="track" cx="100" cy="100" r="88" fill="none" stroke-width="10"/>
+      <circle class="arc" id="ringArc" cx="100" cy="100" r="88" fill="none" stroke-width="10"
+        stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="553"
+        transform="rotate(-90 100 100)"/>
+    </svg>
+    <div id="stWord" class="ok">СЛЕЖУ</div>
+    <p id="stHint"></p>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="stTime">0:00</b><span>в пути</span></div>
+    <div class="stat"><b id="stAlarms">0</b><span>тревог</span></div>
+    <div class="stat"><b id="stPerclos">0%</b><span>глаза закрыты, за минуту</span></div>
+  </div>
+  <div class="bar"><button class="primary" id="btnStop">Стоп</button></div>
+</section>
+
+<div class="overlay" id="ovAlarm" hidden>
+  <h2 id="ovWord">ПРОСНИСЬ!</h2>
+  <p id="ovSub">Тапни по экрану, когда проснулся</p>
+</div>
+<div class="banner" id="bnFatigue" hidden>Похоже, ты устаёшь. Найди место и остановись.</div>
+<div class="banner" id="bnLook" hidden>Глаза на дорогу</div>
+
+<video id="cam" autoplay muted playsinline></video>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+
+const $ = id => document.getElementById(id);
+const scrStart = $("scrStart"), scrSetup = $("scrSetup"), scrDrive = $("scrDrive");
+const cam = $("cam");
+const MODEL_REMOTE = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+let store = {};
+try { store = JSON.parse(localStorage.getItem("neusni") || "{}"); } catch {}
+function save(){ try { localStorage.setItem("neusni", JSON.stringify(store)); } catch {} }
+
+let delayMs = store.delayMs || 1500;
+let detector = null, wakeLock = null, audioCtx = null;
+let mode = "start";
+let lastTs = 0, lastFaceTs = 0, lastClosedTs = 0;
+let closedState = false, closedSince = 0;
+let faceStableMs = 0, prevFrameTs = 0;
+let alarmOn = false, alarmKind = "", sirenNodes = null, sirenTimer = 0, vibTimer = 0;
+let driveStart = 0, alarmCount = 0;
+let frames = [];
+let lastFatigue = 0, lastLostBeep = 0, lookDownSince = 0, lastLookWarn = 0;
+
+if (/iPhone|iPad/.test(navigator.userAgent)) $("iosNote").hidden = false;
+
+function show(name){
+  mode = name;
+  scrStart.hidden = name !== "start";
+  scrSetup.hidden = name !== "setup";
+  scrDrive.hidden = name !== "drive";
+  if (name === "setup") $("slotSetup").appendChild(cam);
+  if (name === "drive") $("slotDrive").appendChild(cam);
+}
+
+function audio(){
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function beep(freq, dur, type = "sine", vol = 0.4){
+  const ctx = audio();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur / 1000);
+  o.connect(g).connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime + dur / 1000);
+}
+function sirenStart(){
+  if (sirenNodes) return;
+  const ctx = audio();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = "square"; o.frequency.value = 950;
+  g.gain.value = 0.7;
+  o.connect(g).connect(ctx.destination);
+  o.start();
+  let hi = false;
+  sirenTimer = setInterval(() => { hi = !hi; o.frequency.setValueAtTime(hi ? 1500 : 950, ctx.currentTime); }, 240);
+  vibTimer = setInterval(() => navigator.vibrate && navigator.vibrate(420), 550);
+  sirenNodes = { o, g };
+}
+function sirenStop(){
+  if (!sirenNodes) return;
+  clearInterval(sirenTimer); clearInterval(vibTimer);
+  navigator.vibrate && navigator.vibrate(0);
+  sirenNodes.g.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.02);
+  const o = sirenNodes.o;
+  setTimeout(() => o.stop(), 120);
+  sirenNodes = null;
+}
+
+function alarmStart(kind){
+  if (alarmOn) return;
+  alarmOn = true; alarmKind = kind;
+  alarmCount++;
+  $("stAlarms").textContent = alarmCount;
+  $("ovWord").textContent = kind === "lost" ? "ТЫ ТАМ?" : "ПРОСНИСЬ!";
+  $("ovSub").textContent = kind === "lost" ? "Не вижу лицо. Тапни по экрану" : "Тапни по экрану, когда проснулся";
+  $("ovAlarm").hidden = false;
+  sirenStart();
+}
+function alarmStop(){
+  if (!alarmOn) return;
+  alarmOn = false;
+  $("ovAlarm").hidden = true;
+  sirenStop();
+  closedSince = 0;
+  lastFaceTs = performance.now();
+  if (mode === "drive") setHint("Остановись и передохни при первой возможности");
+}
+$("ovAlarm").addEventListener("click", alarmStop);
+
+function setHint(t){
+  $("stHint").textContent = t;
+  if (t) setTimeout(() => { if ($("stHint").textContent === t) $("stHint").textContent = ""; }, 8000);
+}
+
+async function keepAwake(){
+  try { wakeLock = await navigator.wakeLock.request("screen"); } catch {}
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && mode !== "start") keepAwake();
+});
+
+async function modelUrl(){
+  if (location.protocol === "file:") return MODEL_REMOTE;
+  try {
+    const r = await fetch("face_landmarker.task", { method: "HEAD" });
+    if (r.ok) return "face_landmarker.task";
+  } catch {}
+  return MODEL_REMOTE;
+}
+async function makeDetector(){
+  const fs = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  const url = await modelUrl();
+  const opts = d => ({
+    baseOptions: { modelAssetPath: url, delegate: d },
+    outputFaceBlendshapes: true,
+    runningMode: "VIDEO",
+    numFaces: 1
+  });
+  try { return await FaceLandmarker.createFromOptions(fs, opts("GPU")); }
+  catch { return await FaceLandmarker.createFromOptions(fs, opts("CPU")); }
+}
+
+$("btnStart").addEventListener("click", async () => {
+  const btn = $("btnStart"), err = $("startErr");
+  err.hidden = true;
+  btn.disabled = true;
+  try {
+    btn.textContent = "Прошу доступ к камере…";
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    cam.srcObject = stream;
+    await cam.play();
+    audio();
+    keepAwake();
+    btn.textContent = "Загружаю модель (4 МБ)…";
+    detector = await makeDetector();
+    show("setup");
+    loop();
+  } catch (e) {
+    err.textContent = e.name === "NotAllowedError"
+      ? "Нет доступа к камере. Разреши камеру для этого сайта в настройках браузера и попробуй ещё раз."
+      : "Не получилось запустить: " + (e.message || e.name || e);
+    err.hidden = false;
+    btn.textContent = "Включить камеру";
+    btn.disabled = false;
+  }
+});
+
+document.querySelectorAll(".seg button").forEach(b => {
+  if (+b.dataset.delay === delayMs) syncSeg(b);
+  b.addEventListener("click", () => {
+    delayMs = +b.dataset.delay;
+    store.delayMs = delayMs; save();
+    syncSeg(b);
+  });
+});
+function syncSeg(active){
+  document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === active ? "true" : "false"));
+}
+
+$("btnSiren").addEventListener("click", () => {
+  sirenStart();
+  setTimeout(sirenStop, 1300);
+});
+
+$("btnGo").addEventListener("click", () => {
+  driveStart = performance.now();
+  alarmCount = 0; frames = []; lastFatigue = 0;
+  $("stAlarms").textContent = "0";
+  $("stTime").textContent = "0:00";
+  $("stPerclos").textContent = "0%";
+  if (store.lit) litSet(true);
+  show("drive");
+});
+
+let stopArmed = 0;
+$("btnStop").addEventListener("click", () => {
+  const b = $("btnStop");
+  if (performance.now() - stopArmed < 3500 && stopArmed) {
+    b.classList.remove("confirm");
+    b.textContent = "Стоп";
+    stopArmed = 0;
+    litSet(false, true);
+    show("setup");
+    return;
+  }
+  stopArmed = performance.now();
+  b.classList.add("confirm");
+  b.textContent = "Выключить слежение";
+  setTimeout(() => {
+    if (stopArmed && performance.now() - stopArmed >= 3400) {
+      b.classList.remove("confirm");
+      b.textContent = "Стоп";
+      stopArmed = 0;
+    }
+  }, 3500);
+});
+
+function litSet(on, keepPref){
+  document.body.classList.toggle("lit", on);
+  $("btnLit").setAttribute("aria-pressed", on ? "true" : "false");
+  if (!keepPref) { store.lit = on; save(); }
+}
+$("btnLit").addEventListener("click", () => litSet(!document.body.classList.contains("lit")));
+
+function loop(){
+  const step = () => {
+    const ts = performance.now();
+    if (detector && cam.readyState >= 2 && ts - lastTs > 25) {
+      lastTs = ts;
+      let res = null;
+      try { res = detector.detectForVideo(cam, ts); } catch {}
+      if (res) handle(res, ts);
+    }
+    if (cam.requestVideoFrameCallback) cam.requestVideoFrameCallback(step);
+    else requestAnimationFrame(step);
+  };
+  if (cam.requestVideoFrameCallback) cam.requestVideoFrameCallback(step);
+  else requestAnimationFrame(step);
+}
+
+function handle(res, ts){
+  const cats = res.faceBlendshapes && res.faceBlendshapes[0] && res.faceBlendshapes[0].categories;
+  const dt = prevFrameTs ? Math.min(ts - prevFrameTs, 200) : 0;
+  prevFrameTs = ts;
+  let blink = 0, lookDown = 0;
+  const face = !!(cats && cats.length);
+
+  if (face) {
+    lastFaceTs = ts;
+    const m = {};
+    for (const c of cats) m[c.categoryName] = c.score;
+    blink = ((m.eyeBlinkLeft || 0) + (m.eyeBlinkRight || 0)) / 2;
+    lookDown = ((m.eyeLookDownLeft || 0) + (m.eyeLookDownRight || 0)) / 2;
+    closedState = closedState ? blink > 0.42 : blink > 0.55;
+    faceStableMs = Math.min(faceStableMs + dt, 5000);
+  } else {
+    closedState = false;
+    faceStableMs = 0;
+  }
+
+  if (mode === "setup") {
+    const chip = $("chipFace");
+    if (face) { chip.textContent = "Лицо в кадре"; chip.className = "chip ok"; }
+    else { chip.textContent = "Наведи камеру на лицо"; chip.className = "chip warn"; }
+    $("eyeFill").style.width = Math.round(blink * 100) + "%";
+    $("eyeFill").className = closedState ? "shut" : "";
+    $("eyeFill").id = "eyeFill";
+    $("eyeTxt").textContent = face ? (closedState ? "Глаза: закрыты" : "Глаза: открыты") : "Глаза: —";
+    $("btnGo").disabled = faceStableMs < 800;
+  }
+
+  if (closedState) {
+    if (!closedSince) closedSince = ts;
+    lastClosedTs = ts;
+  } else {
+    closedSince = 0;
+  }
+
+  if (closedSince && ts - closedSince > delayMs) alarmStart("sleep");
+  if (alarmOn && alarmKind === "sleep" && face && !closedState && ts - lastClosedTs > 700) alarmStop();
+  if (alarmOn && alarmKind === "lost" && face) alarmStop();
+
+  if (mode === "drive") {
+    frames.push({ t: ts, c: closedState ? 1 : 0 });
+    while (frames.length && frames[0].t < ts - 65000) frames.shift();
+
+    const frac = closedSince ? Math.min(1, (ts - closedSince) / delayMs) : 0;
+    $("ringArc").style.strokeDashoffset = 553 * (1 - frac);
+
+    const gap = ts - lastFaceTs;
+    const word = $("stWord");
+    if (gap > 2500 && !alarmOn) {
+      word.textContent = "НЕ ВИЖУ ЛИЦО";
+      word.className = "warn";
+      if (ts - lastLostBeep > 2000) { beep(700, 180, "square", 0.5); lastLostBeep = ts; }
+      if (gap > 8000) alarmStart("lost");
+    } else if (!alarmOn) {
+      word.textContent = "СЛЕЖУ";
+      word.className = "ok";
+    }
+
+    if (face && !closedState && lookDown > 0.65) {
+      if (!lookDownSince) lookDownSince = ts;
+      if (ts - lookDownSince > 2500 && ts - lastLookWarn > 15000) {
+        lastLookWarn = ts;
+        beep(880, 200, "sine", 0.5);
+        $("bnLook").hidden = false;
+        setTimeout(() => { $("bnLook").hidden = true; }, 3500);
+      }
+    } else {
+      lookDownSince = 0;
+    }
+  }
+}
+
+setInterval(() => {
+  if (mode !== "drive") return;
+  const s = Math.floor((performance.now() - driveStart) / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  $("stTime").textContent = (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(sec).padStart(2, "0");
+
+  if (frames.length > 30) {
+    const span = frames[frames.length - 1].t - frames[0].t;
+    const closed = frames.reduce((a, f) => a + f.c, 0) / frames.length;
+    $("stPerclos").textContent = Math.round(closed * 100) + "%";
+    const now = performance.now();
+    if (span > 40000 && closed > 0.2 && now - lastFatigue > 180000 && !alarmOn) {
+      lastFatigue = now;
+      beep(660, 220); setTimeout(() => beep(880, 300), 260);
+      $("bnFatigue").hidden = false;
+      setTimeout(() => { $("bnFatigue").hidden = true; }, 9000);
+    }
+  }
+}, 1000);
+$("bnFatigue").addEventListener("click", () => { $("bnFatigue").hidden = true; });
+$("bnLook").addEventListener("click", () => { $("bnLook").hidden = true; });
+
+show("start");
+</script>
+</body>
+</html>
